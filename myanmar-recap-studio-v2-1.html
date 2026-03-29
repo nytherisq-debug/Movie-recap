@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="my" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Myanmar Recap Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --glass-bg: #ffffff14;
+  --glass-border: #ffffff26;
+  --glass-hover: #ffffff1e;
+  --glass-active: #ffffff2a;
+  --background: #080810;
+  --surface: #0d0d1a;
+  --foreground: #fafafa;
+  --muted: #1a1a2e;
+  --muted-fg: #8888aa;
+  --accent-gold: #f5c842;
+  --accent-ruby: #e8325a;
+  --accent-jade: #00d294;
+  --accent-sapphire: #3080ff;
+  --accent-violet: #ac4bff;
+  --border: rgba(255,255,255,0.12);
+  --radius-glass: 20px;
+  --blur-glass: blur(24px);
+  --font-display: 'Syne', sans-serif;
+  --font-myanmar: 'Padauk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --shadow-card: 0 8px 48px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--background); color: var(--foreground);
+  font-family: var(--font-display); min-height: 100vh;
+  overflow-x: hidden; line-height: 1.6;
+}
+.myanmar { font-family: var(--font-myanmar); }
+.mono    { font-family: var(--font-mono); }
+
+/* BG */
+.bg-mesh {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(172,75,255,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(48,128,255,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(245,200,66,0.06) 0%, transparent 70%),
+    var(--background);
+}
+.orb { position:fixed; border-radius:50%; filter:blur(80px); pointer-events:none; z-index:0; animation:orbFloat linear infinite; }
+.orb-1 { width:400px;height:400px;top:-100px;left:-100px;background:rgba(172,75,255,0.08);animation-duration:20s; }
+.orb-2 { width:300px;height:300px;bottom:-50px;right:-50px;background:rgba(48,128,255,0.10);animation-duration:15s;animation-delay:-7s; }
+@keyframes orbFloat { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-30px) scale(1.05)} }
+
+/* GLASS */
+.glass {
+  background:var(--glass-bg); border:1px solid var(--glass-border);
+  backdrop-filter:var(--blur-glass); -webkit-backdrop-filter:var(--blur-glass);
+  border-radius:var(--radius-glass); box-shadow:var(--shadow-card);
+}
+.glass-sm { background:var(--glass-bg); border:1px solid var(--glass-border); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-radius:12px; }
+
+/* LAYOUT */
+.container { max-width:1280px; margin:0 auto; padding:0 24px; }
+main { position:relative; z-index:1; }
+
+/* ─── API KEY MODAL ─── */
+.modal-overlay {
+  position:fixed; inset:0; z-index:999; display:flex; align-items:center; justify-content:center;
+  background:rgba(8,8,16,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  padding:24px;
+}
+.modal-overlay.hidden { display:none; }
+.api-modal {
+  width:100%; max-width:480px; padding:36px;
+  background:rgba(13,13,26,0.95); border:1px solid var(--glass-border);
+  border-radius:24px; box-shadow:0 24px 80px rgba(0,0,0,0.6);
+  animation: fadeSlideUp .4s ease;
+}
+.api-modal-logo { font-size:40px; margin-bottom:16px; display:block; text-align:center; }
+.api-modal h2 { font-size:22px; font-weight:800; text-align:center; margin-bottom:6px; }
+.api-modal-sub { font-family:var(--font-myanmar); font-size:14px; color:var(--muted-fg); text-align:center; margin-bottom:28px; }
+.api-key-input-wrap { position:relative; margin-bottom:16px; }
+.api-key-input {
+  width:100%; padding:14px 44px 14px 16px; border-radius:14px; font-size:13px;
+  background:rgba(255,255,255,0.06); border:1px solid var(--glass-border);
+  color:var(--foreground); font-family:var(--font-mono); outline:none; letter-spacing:0.04em;
+}
+.api-key-input:focus { border-color:rgba(172,75,255,0.6); box-shadow:0 0 0 3px rgba(172,75,255,0.12); }
+.api-key-toggle {
+  position:absolute; right:12px; top:50%; transform:translateY(-50%);
+  background:none; border:none; cursor:pointer; color:var(--muted-fg); font-size:16px; padding:4px;
+}
+.api-key-toggle:hover { color:var(--foreground); }
+.api-hint {
+  font-size:12px; color:var(--muted-fg); padding:10px 14px; border-radius:10px;
+  background:rgba(172,75,255,0.06); border:1px solid rgba(172,75,255,0.15); margin-bottom:20px;
+  line-height:1.6;
+}
+.api-hint a { color:var(--accent-violet); text-decoration:none; }
+.api-hint a:hover { text-decoration:underline; }
+.api-save-btn {
+  width:100%; padding:14px; border-radius:14px; font-size:14px; font-weight:700;
+  background:linear-gradient(135deg,var(--accent-violet),var(--accent-sapphire));
+  color:#fff; border:none; cursor:pointer; transition:all .2s;
+  box-shadow:0 4px 20px rgba(172,75,255,0.3); display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.api-save-btn:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(172,75,255,0.4); }
+.api-save-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+.api-error { font-size:12px; color:var(--accent-ruby); margin-top:10px; text-align:center; display:none; }
+
+/* NAVBAR */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:100; padding:14px 0;
+  background:rgba(8,8,16,0.7); border-bottom:1px solid var(--glass-border);
+  backdrop-filter:var(--blur-glass); -webkit-backdrop-filter:var(--blur-glass);
+}
+.nav-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.logo-icon {
+  width:34px; height:34px; border-radius:10px;
+  background:linear-gradient(135deg,var(--accent-violet),var(--accent-sapphire));
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+  box-shadow:0 0 16px rgba(172,75,255,0.4);
+}
+.logo-text { font-size:14px; font-weight:700; }
+.logo-sub  { font-size:10px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+.api-status-chip {
+  display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px;
+  font-size:11px; font-weight:600; cursor:pointer; transition:all .2s; border:1px solid;
+}
+.api-status-chip.connected { color:var(--accent-jade); border-color:rgba(0,210,148,0.3); background:rgba(0,210,148,0.08); }
+.api-status-chip.disconnected { color:var(--accent-ruby); border-color:rgba(232,50,90,0.3); background:rgba(232,50,90,0.08); }
+.api-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 2s infinite; }
+.nav-links { display:flex; gap:4px; }
+.nav-link { padding:7px 12px; border-radius:8px; font-size:12px; font-weight:500; color:var(--muted-fg); cursor:pointer; transition:all .2s; border:none; background:transparent; text-decoration:none; }
+.nav-link:hover { color:var(--foreground); background:var(--glass-bg); }
+
+/* BUTTONS */
+.btn-primary {
+  display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:12px;
+  font-size:13px; font-weight:700; background:linear-gradient(135deg,var(--accent-violet),var(--accent-sapphire));
+  color:#fff; border:none; cursor:pointer; transition:all .2s; font-family:var(--font-display);
+  box-shadow:0 4px 20px rgba(172,75,255,0.3);
+}
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(172,75,255,0.4); }
+.btn-primary:active { transform:translateY(0); }
+.btn-primary:disabled { opacity:0.55; cursor:not-allowed; transform:none; }
+.btn-secondary {
+  display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:12px;
+  font-size:13px; font-weight:600; background:var(--glass-bg); border:1px solid var(--glass-border);
+  color:var(--foreground); cursor:pointer; transition:all .2s; font-family:var(--font-display);
+}
+.btn-secondary:hover { background:var(--glass-hover); }
+.btn-secondary:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-sm { padding:7px 14px; font-size:12px; border-radius:9px; }
+.btn-icon {
+  width:34px; height:34px; border-radius:10px; border:1px solid var(--glass-border);
+  background:var(--glass-bg); color:var(--muted-fg); cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; font-size:14px; transition:all .2s;
+}
+.btn-icon:hover { color:var(--foreground); background:var(--glass-hover); }
+
+/* HERO */
+.hero {
+  min-height:100vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:120px 24px 80px;
+}
+.hero-badge {
+  display:inline-flex; align-items:center; gap:8px; padding:6px 16px; border-radius:999px; margin-bottom:28px;
+  background:rgba(245,200,66,0.1); border:1px solid rgba(245,200,66,0.3);
+  font-size:12px; font-weight:600; color:var(--accent-gold); letter-spacing:0.08em;
+  animation:fadeSlideUp .6s ease forwards;
+}
+.badge-dot { width:6px;height:6px;border-radius:50%;background:var(--accent-gold);animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
+.hero h1 { font-size:clamp(2.2rem,6vw,4.5rem); font-weight:800; line-height:1.05; letter-spacing:-0.04em; margin-bottom:14px; animation:fadeSlideUp .6s ease .1s both; }
+.gradient-text { background:linear-gradient(135deg,var(--accent-gold) 0%,var(--accent-ruby) 40%,var(--accent-violet) 80%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hero-sub-mm { font-family:var(--font-myanmar); font-size:clamp(1rem,2vw,1.2rem); color:var(--muted-fg); margin-bottom:20px; animation:fadeSlideUp .6s ease .15s both; }
+.hero-desc { font-size:clamp(.9rem,1.5vw,1rem); color:var(--muted-fg); max-width:560px; line-height:1.75; margin:0 auto 36px; animation:fadeSlideUp .6s ease .2s both; }
+@keyframes fadeSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.hero-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; animation:fadeSlideUp .6s ease .3s both; }
+.hero-stats { display:flex; gap:28px; flex-wrap:wrap; justify-content:center; margin-top:56px; animation:fadeSlideUp .6s ease .4s both; }
+.stat-item { text-align:center; }
+.stat-num { font-size:1.8rem; font-weight:800; letter-spacing:-0.04em; }
+.stat-label { font-size:11px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+.stat-divider { width:1px; background:var(--glass-border); align-self:stretch; }
+
+/* SECTION */
+.section { padding:72px 0; }
+.section-title { font-size:clamp(1.4rem,3vw,2.2rem); font-weight:800; letter-spacing:-0.04em; margin-bottom:6px; }
+.section-sub-mm { font-family:var(--font-myanmar); font-size:.95rem; color:var(--muted-fg); margin-bottom:40px; }
+
+/* TABS */
+.tabs { display:flex; gap:4px; margin-bottom:28px; overflow-x:auto; padding-bottom:4px; }
+.tab {
+  padding:9px 18px; border-radius:12px; font-size:13px; font-weight:600; color:var(--muted-fg);
+  cursor:pointer; white-space:nowrap; border:1px solid transparent; transition:all .2s; background:transparent;
+  display:flex; align-items:center; gap:7px;
+}
+.tab.active { color:var(--foreground); background:var(--glass-bg); border-color:var(--glass-border); }
+.tab:hover:not(.active) { color:var(--foreground); background:rgba(255,255,255,0.04); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; animation:fadeSlideUp .3s ease; }
+
+/* UPLOAD */
+.upload-zone {
+  border:2px dashed var(--glass-border); border-radius:22px; padding:52px 36px; text-align:center;
+  cursor:pointer; transition:all .3s; position:relative; overflow:hidden; background:rgba(255,255,255,0.02);
+}
+.upload-zone:hover,.upload-zone.drag-over {
+  border-color:var(--accent-violet); background:rgba(172,75,255,0.05);
+  box-shadow:0 0 0 4px rgba(172,75,255,0.1);
+}
+.upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.upload-icon { font-size:44px; margin-bottom:14px; display:block; }
+.upload-title { font-size:1rem; font-weight:700; margin-bottom:5px; }
+.upload-sub { font-size:13px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+.upload-formats { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:16px; }
+.format-tag { padding:3px 8px; border-radius:6px; font-size:10px; font-weight:600; background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--muted-fg); font-family:var(--font-mono); }
+
+/* VIDEO PREVIEW */
+.video-preview-card { display:none; }
+.video-preview-card.visible { display:block; animation:fadeSlideUp .4s ease; }
+.video-thumb {
+  width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden;
+  background:linear-gradient(135deg,#1a1a2e,#0d0d1a);
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--glass-border); position:relative;
+}
+.video-thumb video { width:100%; height:100%; object-fit:cover; display:none; }
+.video-thumb video.loaded { display:block; }
+.video-play-btn {
+  position:absolute; width:54px; height:54px; border-radius:50%;
+  background:rgba(172,75,255,0.8); border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+  color:#fff; backdrop-filter:blur(8px); transition:all .2s;
+}
+.video-play-btn:hover { transform:scale(1.1); }
+.video-meta { padding:14px 0 0; }
+.video-filename { font-size:13px; font-weight:600; margin-bottom:4px; word-break:break-all; }
+.video-info { font-size:11px; color:var(--muted-fg); font-family:var(--font-mono); }
+.video-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.tag { padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid var(--glass-border); }
+.tag-green { color:var(--accent-jade);     border-color:rgba(0,210,148,0.3);  background:rgba(0,210,148,0.08); }
+.tag-blue  { color:var(--accent-sapphire); border-color:rgba(48,128,255,0.3); background:rgba(48,128,255,0.08); }
+.tag-gold  { color:var(--accent-gold);     border-color:rgba(245,200,66,0.3); background:rgba(245,200,66,0.08); }
+.tag-violet{ color:var(--accent-violet);   border-color:rgba(172,75,255,0.3); background:rgba(172,75,255,0.08); }
+.tag-ruby  { color:var(--accent-ruby);     border-color:rgba(232,50,90,0.3);  background:rgba(232,50,90,0.08); }
+
+/* SETTINGS */
+.settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:640px){ .settings-grid{grid-template-columns:1fr;} }
+.setting-label { font-size:11px; font-weight:700; color:var(--muted-fg); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:7px; }
+.glass-select {
+  width:100%; padding:9px 12px; border-radius:11px; font-size:13px;
+  background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--foreground);
+  font-family:var(--font-display); cursor:pointer; outline:none; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center; padding-right:28px;
+}
+.glass-select:focus { border-color:rgba(172,75,255,0.5); }
+.glass-input {
+  width:100%; padding:9px 12px; border-radius:11px; font-size:13px;
+  background:var(--glass-bg); border:1px solid var(--glass-border);
+  color:var(--foreground); font-family:var(--font-display); outline:none;
+}
+.glass-input:focus { border-color:rgba(172,75,255,0.5); box-shadow:0 0 0 3px rgba(172,75,255,0.1); }
+.glass-textarea {
+  width:100%; padding:10px 12px; border-radius:11px; font-size:13px;
+  background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
+  color:var(--foreground); font-family:var(--font-myanmar); outline:none; resize:vertical; min-height:80px; line-height:1.7;
+}
+.glass-textarea:focus { border-color:rgba(172,75,255,0.5); box-shadow:0 0 0 3px rgba(172,75,255,0.1); }
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+.toggle-row:last-child { border-bottom:none; }
+.toggle-info .toggle-title { font-size:12px; font-weight:600; }
+.toggle-info .toggle-sub { font-size:11px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+.toggle { position:relative; width:38px; height:21px; cursor:pointer; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-track { position:absolute; inset:0; border-radius:999px; background:rgba(255,255,255,0.15); transition:all .3s; }
+.toggle input:checked ~ .toggle-track { background:var(--accent-violet); }
+.toggle-thumb { position:absolute; top:3px; left:3px; width:15px; height:15px; border-radius:50%; background:#fff; transition:all .3s; box-shadow:0 1px 4px rgba(0,0,0,0.4); }
+.toggle input:checked ~ .toggle-thumb { transform:translateX(17px); }
+
+/* PIPELINE */
+.pipeline { display:flex; flex-direction:column; gap:10px; }
+.pipeline-step {
+  display:flex; align-items:center; gap:14px; padding:13px 16px; border-radius:14px;
+  background:var(--glass-bg); border:1px solid var(--glass-border); transition:all .4s;
+}
+.pipeline-step.active { border-color:rgba(172,75,255,0.5); background:rgba(172,75,255,0.08); }
+.pipeline-step.done   { border-color:rgba(0,210,148,0.4); background:rgba(0,210,148,0.06); }
+.step-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; background:rgba(255,255,255,0.05); }
+.pipeline-step.active .step-icon { background:rgba(172,75,255,0.2); animation:stepPulse 1.5s ease-in-out infinite; }
+.pipeline-step.done   .step-icon { background:rgba(0,210,148,0.15); }
+@keyframes stepPulse { 0%,100%{box-shadow:0 0 0 0 rgba(172,75,255,0.3)} 50%{box-shadow:0 0 0 6px rgba(172,75,255,0)} }
+.step-info { flex:1; }
+.step-name { font-size:13px; font-weight:600; margin-bottom:1px; }
+.step-sub  { font-size:11px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+.progress-bar-wrap { height:3px; border-radius:999px; background:rgba(255,255,255,0.08); margin-top:6px; overflow:hidden; }
+.progress-bar { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--accent-violet),var(--accent-sapphire)); transition:width .5s ease; width:0%; }
+.step-status { font-size:11px; font-weight:700; flex-shrink:0; }
+.step-status.pending { color:var(--muted-fg); }
+.step-status.running { color:var(--accent-violet); }
+.step-status.done    { color:var(--accent-jade); }
+.overall-progress { margin-bottom:18px; }
+.progress-label { display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px; }
+.progress-label .label-mm { font-family:var(--font-myanmar); color:var(--muted-fg); }
+.progress-pct { font-weight:700; color:var(--accent-violet); font-family:var(--font-mono); }
+
+/* VOICE CARDS */
+.voice-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+.voice-card {
+  padding:18px; border-radius:16px; cursor:pointer;
+  border:2px solid var(--glass-border); background:var(--glass-bg);
+  transition:all .2s; position:relative; overflow:hidden;
+}
+.voice-card:hover { border-color:rgba(172,75,255,0.4); background:var(--glass-hover); }
+.voice-card.selected { border-color:var(--accent-violet); background:rgba(172,75,255,0.08); box-shadow:0 0 24px rgba(172,75,255,0.15); }
+.voice-avatar { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:10px; }
+.voice-name { font-size:13px; font-weight:700; margin-bottom:1px; }
+.voice-name-mm { font-family:var(--font-myanmar); font-size:11px; color:var(--muted-fg); margin-bottom:8px; }
+.voice-attrs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
+.voice-attr { font-size:9px; font-weight:600; padding:2px 7px; border-radius:6px; border:1px solid var(--glass-border); color:var(--muted-fg); }
+.voice-play { width:28px; height:28px; border-radius:50%; border:none; cursor:pointer; background:rgba(172,75,255,0.3); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.voice-play:hover { transform:scale(1.15); background:rgba(172,75,255,0.6); }
+.voice-waveform { display:flex; align-items:center; gap:2px; height:20px; margin-bottom:8px; }
+.wv { width:3px; border-radius:2px; background:rgba(172,75,255,0.4); }
+.voice-card.selected .wv { background:var(--accent-violet); }
+.voice-card.playing .wv { animation:wvAnim var(--d,.7s) ease-in-out infinite alternate; }
+@keyframes wvAnim { from{transform:scaleY(.15)} to{transform:scaleY(1)} }
+.check-mark { position:absolute; top:10px; right:10px; width:18px; height:18px; border-radius:50%; background:var(--accent-violet); display:none; align-items:center; justify-content:center; font-size:10px; }
+.voice-card.selected .check-mark { display:flex; }
+
+/* SUBTITLE EDITOR */
+.subtitle-editor-grid { display:grid; grid-template-columns:1fr 320px; gap:20px; }
+@media(max-width:860px){ .subtitle-editor-grid{grid-template-columns:1fr;} }
+.sub-list { display:flex; flex-direction:column; gap:8px; max-height:520px; overflow-y:auto; padding-right:4px; }
+.sub-list::-webkit-scrollbar { width:4px; }
+.sub-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:2px; }
+.sub-item {
+  display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:start;
+  padding:12px 14px; border-radius:12px; cursor:pointer;
+  border:1px solid var(--glass-border); background:var(--glass-bg); transition:all .2s;
+}
+.sub-item:hover { border-color:rgba(172,75,255,0.3); background:var(--glass-hover); }
+.sub-item.active { border-color:var(--accent-violet); background:rgba(172,75,255,0.08); }
+.sub-idx { font-size:10px; font-weight:700; color:var(--muted-fg); font-family:var(--font-mono); padding-top:2px; }
+.sub-content { }
+.sub-timing { font-size:9px; color:var(--muted-fg); font-family:var(--font-mono); margin-bottom:3px; }
+.sub-original { font-size:12px; color:var(--muted-fg); margin-bottom:3px; }
+.sub-mm { font-family:var(--font-myanmar); font-size:13px; font-weight:700; }
+.sub-actions { display:flex; gap:3px; }
+.sub-edit-btn { width:24px; height:24px; border-radius:7px; border:1px solid var(--glass-border); background:transparent; color:var(--muted-fg); cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.sub-edit-btn:hover { color:var(--foreground); background:var(--glass-bg); }
+
+/* PREVIEW */
+.preview-screen {
+  width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden;
+  background:linear-gradient(135deg,#0d0d1a,#1a1a2e);
+  position:relative; border:1px solid var(--glass-border);
+  display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+}
+.preview-subtitle-box { position:absolute; bottom:14px; left:14px; right:14px; text-align:center; }
+.preview-sub-orig { font-size:10px; color:rgba(255,255,255,0.5); margin-bottom:4px; }
+.preview-subtitle { display:inline-block; font-family:var(--font-myanmar); font-size:13px; font-weight:700; padding:7px 14px; border-radius:8px; background:rgba(0,0,0,0.75); color:#fff; border-bottom:2px solid var(--accent-gold); line-height:1.6; }
+.sub-edit-panel { padding:14px; border-radius:14px; border:1px solid var(--glass-border); background:var(--glass-bg); }
+.sub-edit-panel h4 { font-size:12px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+
+/* RECAP */
+.recap-options { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+@media(max-width:560px){ .recap-options{grid-template-columns:1fr;} }
+.recap-opt { padding:14px; border-radius:14px; text-align:center; cursor:pointer; border:2px solid var(--glass-border); background:var(--glass-bg); transition:all .2s; }
+.recap-opt:hover { border-color:rgba(172,75,255,0.4); }
+.recap-opt.selected { border-color:var(--accent-gold); background:rgba(245,200,66,0.06); }
+.recap-opt .opt-icon { font-size:22px; margin-bottom:5px; }
+.recap-opt .opt-name { font-size:12px; font-weight:700; margin-bottom:2px; }
+.recap-opt .opt-sub  { font-size:10px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+
+/* ─── REAL AI INDICATOR ─── */
+.ai-badge {
+  display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px;
+  font-size:10px; font-weight:700; letter-spacing:0.06em;
+  background:rgba(172,75,255,0.12); border:1px solid rgba(172,75,255,0.3); color:var(--accent-violet);
+}
+.ai-badge .ai-dot { width:5px; height:5px; border-radius:50%; background:var(--accent-violet); animation:pulse 1.5s infinite; }
+
+/* RECAP OUTPUT */
+.recap-output {
+  padding:22px; border-radius:16px; border:1px solid var(--glass-border);
+  background:var(--glass-bg); min-height:140px;
+}
+.recap-text { font-family:var(--font-myanmar); font-size:15px; line-height:1.95; color:var(--foreground); }
+.recap-text p { margin-bottom:10px; }
+.recap-text strong { color:var(--accent-gold); }
+.recap-text .highlight { background:linear-gradient(90deg,rgba(245,200,66,0.15),rgba(245,200,66,0.03)); border-left:3px solid var(--accent-gold); padding:8px 14px; border-radius:0 8px 8px 0; margin:10px 0; display:block; }
+.typing-cursor { display:inline-block; width:2px; height:1em; background:var(--accent-violet); animation:blink .7s infinite; vertical-align:text-bottom; margin-left:2px; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* TOKEN COUNTER */
+.token-info { display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
+.token-chip { font-size:10px; font-family:var(--font-mono); color:var(--muted-fg); padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); }
+
+/* TRANSLATE PANEL */
+.translate-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:700px){ .translate-grid{grid-template-columns:1fr;} }
+.lang-box { }
+.lang-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.lang-label { font-size:11px; font-weight:700; color:var(--muted-fg); letter-spacing:0.06em; }
+.translate-area { width:100%; padding:12px 14px; border-radius:14px; font-size:13px; line-height:1.7; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); color:var(--foreground); outline:none; resize:none; min-height:140px; font-family:var(--font-display); }
+.translate-area.myanmar-out { font-family:var(--font-myanmar); font-size:14px; background:rgba(172,75,255,0.04); border-color:rgba(172,75,255,0.2); }
+.translate-area:focus { border-color:rgba(172,75,255,0.4); }
+.translate-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+/* COPYRIGHT */
+.copyright-check { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; border:1px solid var(--glass-border); background:var(--glass-bg); margin-bottom:8px; }
+.check-info { flex:1; }
+.check-name { font-size:12px; font-weight:600; margin-bottom:2px; }
+.check-desc { font-size:10px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+.status-badge { padding:3px 9px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:0.04em; }
+.status-safe  { color:var(--accent-jade);     background:rgba(0,210,148,0.1); border:1px solid rgba(0,210,148,0.3); }
+.status-warn  { color:var(--accent-gold);     background:rgba(245,200,66,0.1); border:1px solid rgba(245,200,66,0.3); }
+
+/* EXPORT */
+.export-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+.export-card { padding:18px; border-radius:14px; text-align:center; cursor:pointer; border:1px solid var(--glass-border); background:var(--glass-bg); transition:all .2s; }
+.export-card:hover { border-color:rgba(172,75,255,0.4); background:var(--glass-hover); transform:translateY(-2px); }
+.export-icon { font-size:28px; margin-bottom:10px; display:block; }
+.export-name { font-size:13px; font-weight:700; margin-bottom:3px; }
+.export-sub  { font-size:11px; color:var(--muted-fg); font-family:var(--font-myanmar); }
+.export-size { font-size:10px; color:var(--muted-fg); font-family:var(--font-mono); margin-top:6px; }
+
+/* FEATURES */
+.features-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px; }
+.feature-card { padding:24px; border-radius:18px; border:1px solid var(--glass-border); background:var(--glass-bg); transition:all .3s; position:relative; overflow:hidden; }
+.feature-card::before { content:''; position:absolute; top:-50px; right:-50px; width:120px; height:120px; border-radius:50%; background:var(--fc-color,rgba(172,75,255,0.12)); filter:blur(36px); }
+.feature-card:hover { transform:translateY(-3px); border-color:rgba(172,75,255,0.2); }
+.feature-icon { font-size:28px; margin-bottom:12px; }
+.feature-title { font-size:15px; font-weight:700; margin-bottom:4px; }
+.feature-title-mm { font-family:var(--font-myanmar); font-size:11px; color:var(--muted-fg); margin-bottom:10px; }
+.feature-desc { font-size:12px; color:var(--muted-fg); line-height:1.7; }
+
+/* DIVIDER */
+.divider { height:1px; background:var(--glass-border); margin:20px 0; }
+
+/* SPINNER */
+.spinner { width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.1); border-top-color:currentColor; animation:spin .7s linear infinite; display:inline-block; flex-shrink:0; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* WAVEFORM */
+.waveform-vis { display:flex; align-items:center; gap:2px; height:40px; overflow:hidden; }
+.wv-bar { flex:1; border-radius:2px; background:var(--accent-violet); opacity:0.5; animation:wvBarAnim calc(var(--d,.8s)) ease-in-out infinite alternate; }
+@keyframes wvBarAnim { from{transform:scaleY(.1)} to{transform:scaleY(1)} }
+
+/* TOAST */
+.toast-container { position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { padding:12px 18px; border-radius:12px; font-size:13px; font-weight:600; border:1px solid var(--glass-border); backdrop-filter:blur(20px); display:flex; align-items:center; gap:8px; animation:toastIn .3s ease forwards; max-width:320px; }
+.toast.toast-success { background:rgba(0,210,148,0.15); border-color:rgba(0,210,148,0.3); color:var(--accent-jade); }
+.toast.toast-info    { background:rgba(172,75,255,0.15); border-color:rgba(172,75,255,0.3); color:var(--accent-violet); }
+.toast.toast-warn    { background:rgba(245,200,66,0.15); border-color:rgba(245,200,66,0.3); color:var(--accent-gold); }
+.toast.toast-error   { background:rgba(232,50,90,0.15);  border-color:rgba(232,50,90,0.3);  color:var(--accent-ruby); }
+@keyframes toastIn  { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+@keyframes toastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(40px)} }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:3px; }
+
+/* FOOTER */
+footer { padding:36px 0 20px; border-top:1px solid var(--glass-border); text-align:center; font-size:11px; color:var(--muted-fg); position:relative; z-index:1; }
+.footer-logo { font-size:15px; font-weight:800; margin-bottom:6px; }
+.footer-mm { font-family:var(--font-myanmar); margin-bottom:12px; font-size:12px; }
+
+/* FADE IN */
+.fade-in { opacity:0; transform:translateY(20px); transition:opacity .6s ease,transform .6s ease; }
+.fade-in.visible { opacity:1; transform:translateY(0); }
+
+/* HIGHLIGHT MATCH */
+.real-ai-border { border-color:rgba(172,75,255,0.4) !important; }
+</style>
+</head>
+<body>
+
+<!-- BG -->
+<div class="bg-mesh"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ─── API KEY MODAL ─── -->
+<div class="modal-overlay" id="apiModal">
+  <div class="api-modal">
+    <span class="api-modal-logo">🤖</span>
+    <h2>Claude API Key ထည့်ပါ</h2>
+    <p class="api-modal-sub">Real AI Translation & Recap အတွက် Anthropic API Key လိုပါသည်</p>
+
+    <div class="api-key-input-wrap">
+      <input type="password" class="api-key-input" id="apiKeyInput" placeholder="sk-ant-api03-..." oninput="clearApiError()">
+      <button class="api-key-toggle" onclick="toggleApiKeyVis()" id="apiKeyToggle">👁</button>
+    </div>
+
+    <div class="api-hint">
+      🔑 API Key ကို <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> မှ ရယူနိုင်သည်။<br>
+      🔒 Key ကို browser localStorage တွင်သာ သိမ်းဆည်းသည်၊ server မပို့ပါ။<br>
+      ⚠ Direct browser call — CORS bypass header ထည့်ထားသည်။
+    </div>
+
+    <div class="api-error" id="apiError">API Key မှားနေသည် — sk-ant- ဖြင့် စတင်ရပါမည်</div>
+
+    <button class="api-save-btn" id="apiSaveBtn" onclick="saveApiKey()">
+      ✨ ချိတ်ဆက်မည်
+    </button>
+
+    <div style="text-align:center;margin-top:14px;">
+      <button onclick="skipApiKey()" style="background:none;border:none;color:var(--muted-fg);font-size:12px;cursor:pointer;font-family:var(--font-display);">
+        Demo Mode ဖြင့် ဆက်မည် →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── NAVBAR ─── -->
+<nav>
+  <div class="container nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">🎬</div>
+      <div>
+        <div class="logo-text">Myanmar Recap Studio</div>
+        <div class="logo-sub">မြန်မာ AI ဗီဒီယိုပြုပြင်ရေး</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="#studio">Studio</a>
+      <a class="nav-link" href="#translate-section">Translate</a>
+      <a class="nav-link" href="#voices-section">Voices</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="api-status-chip disconnected" id="apiChip" onclick="openApiModal()">
+        <div class="api-dot"></div>
+        <span id="apiChipLabel">API မချိတ်ရသေး</span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <span class="hero-badge"><span class="badge-dot"></span>REAL AI · CLAUDE API · MYANMAR NATIVE</span>
+  <h1><span class="gradient-text">AI Myanmar</span><br>Recap Studio</h1>
+  <div class="hero-sub-mm">Claude AI ဖြင့် ဗီဒီယိုများကို မြန်မာဘာသာ Real-time ပြောင်းလဲမည်</div>
+  <p class="hero-desc">Real Claude API integration — translate subtitles, generate Myanmar recaps, stream responses live. No fake demo, actual AI.</p>
+  <div class="hero-actions">
+    <button class="btn-primary" onclick="scrollToSection('studio')">🎬 Studio ဖွင့်မည်</button>
+    <button class="btn-secondary" onclick="scrollToSection('translate-section')">🌐 Translate လုပ်မည်</button>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item"><div class="stat-num" style="color:var(--accent-violet)">Claude</div><div class="stat-label">AI Engine</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--accent-jade)">Real</div><div class="stat-label">Translation</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--accent-gold)">Stream</div><div class="stat-label">Live Output</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--accent-ruby)">100%</div><div class="stat-label">Myanmar Native</div></div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ─── -->
+<section class="section">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-title">Features များ</div>
+      <div class="section-sub-mm">Claude API ဖြင့် အစစ်အမှန် AI Features</div>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-in" style="--fc-color:rgba(172,75,255,0.15)">
+        <div class="feature-icon">🌐</div>
+        <div class="feature-title">Real Myanmar Translation</div>
+        <div class="feature-title-mm">Claude AI ဖြင့် မြန်မာဘာသာ ပြန်ဆိုခြင်း</div>
+        <div class="feature-desc">Not a dictionary — Claude understands context, idioms, tone. Native-sounding translations, not word-by-word.</div>
+      </div>
+      <div class="feature-card fade-in" style="--fc-color:rgba(245,200,66,0.15)">
+        <div class="feature-icon">✂️</div>
+        <div class="feature-title">AI Recap Generation</div>
+        <div class="feature-title-mm">မြန်မာ Recap ထုတ်လုပ်ခြင်း</div>
+        <div class="feature-desc">Paste any content → Claude generates engaging Myanmar recaps in Reel, Short, or Full format with streaming output.</div>
+      </div>
+      <div class="feature-card fade-in" style="--fc-color:rgba(48,128,255,0.15)">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Streaming Live Output</div>
+        <div class="feature-title-mm">Real-time စာသား ထွက်လာမှု</div>
+        <div class="feature-desc">See Claude's response stream in real time — character by character, no waiting for full response.</div>
+      </div>
+      <div class="feature-card fade-in" style="--fc-color:rgba(0,210,148,0.15)">
+        <div class="feature-icon">📝</div>
+        <div class="feature-title">Subtitle Auto-Translate</div>
+        <div class="feature-title-mm">Subtitle တစ်ခုချင်း မြန်မာ ပြောင်းမှု</div>
+        <div class="feature-desc">Upload SRT or type subtitles → auto-translate all lines to natural Myanmar. Edit individually if needed.</div>
+      </div>
+      <div class="feature-card fade-in" style="--fc-color:rgba(232,50,90,0.15)">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-title">Copyright Shield</div>
+        <div class="feature-title-mm">မူပိုင်ခွင့် ကာကွယ်မှု</div>
+        <div class="feature-desc">Audio pitch shift, metadata wipe, video hash alteration — maximize upload safety across all platforms.</div>
+      </div>
+      <div class="feature-card fade-in" style="--fc-color:rgba(245,200,66,0.10)">
+        <div class="feature-icon">💾</div>
+        <div class="feature-title">Multi-Format Export</div>
+        <div class="feature-title-mm">ဖိုင်ပုံစံများ ထုတ်ယူမှု</div>
+        <div class="feature-desc">Download SRT, TXT transcript, or copy recap text. Browser-native, no server needed.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── MAIN STUDIO ─── -->
+<section class="section" id="studio">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-title">🎬 Studio</div>
+      <div class="section-sub-mm">ဗီဒီယို Upload → AI Subtitle → Recap</div>
+    </div>
+
+    <div class="tabs fade-in">
+      <button class="tab active" onclick="switchTab('upload',this)"><span>📁</span> Upload & Process</button>
+      <button class="tab" onclick="switchTab('subtitles',this)"><span>📝</span> Subtitle Editor</button>
+      <button class="tab" onclick="switchTab('recap',this)"><span>✂️</span> AI Recap</button>
+      <button class="tab" onclick="switchTab('export',this)"><span>📤</span> Export & Copyright</button>
+    </div>
+
+    <!-- TAB: UPLOAD -->
+    <div class="tab-panel active" id="tab-upload">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div class="upload-zone" id="uploadZone" onclick="triggerFileInput()">
+            <input type="file" id="fileInput" accept="video/*,audio/*,.srt" onchange="handleFileSelect(event)">
+            <span class="upload-icon">🎬</span>
+            <div class="upload-title">ဗီဒီယို / SRT ဖိုင် ထည့်ပါ</div>
+            <div class="upload-sub">Drag & Drop သို့မဟုတ် နှိပ်ပါ</div>
+            <div class="upload-formats">
+              <span class="format-tag">MP4</span><span class="format-tag">MKV</span><span class="format-tag">MOV</span>
+              <span class="format-tag">MP3</span><span class="format-tag">SRT</span><span class="format-tag">TXT</span>
+            </div>
+          </div>
+
+          <div class="video-preview-card glass" id="videoPreview" style="margin-top:14px;padding:14px;">
+            <div class="video-thumb">
+              <span style="font-size:3rem;opacity:.2">🎬</span>
+              <video id="previewVideo"></video>
+              <button class="video-play-btn" onclick="togglePlay()">▶</button>
+            </div>
+            <div class="video-meta">
+              <div class="video-filename" id="videoFilename">—</div>
+              <div class="video-info mono" id="videoInfo" style="font-size:11px;color:var(--muted-fg);">—</div>
+              <div class="video-tags" id="videoTags"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <!-- Settings -->
+          <div class="glass" style="padding:18px;">
+            <div style="font-size:13px;font-weight:700;margin-bottom:14px;">⚙️ Settings</div>
+            <div class="settings-grid">
+              <div>
+                <div class="setting-label">Source Language</div>
+                <select class="glass-select" id="srcLang">
+                  <option value="auto">🔍 Auto Detect</option>
+                  <option value="en">🇬🇧 English</option>
+                  <option value="zh">🇨🇳 Chinese</option>
+                  <option value="th">🇹🇭 Thai</option>
+                  <option value="ja">🇯🇵 Japanese</option>
+                  <option value="ko">🇰🇷 Korean</option>
+                </select>
+              </div>
+              <div>
+                <div class="setting-label">Recap Style</div>
+                <select class="glass-select" id="recapStyleSel">
+                  <option value="reel">Reel 60s</option>
+                  <option value="short" selected>Short 5-min</option>
+                  <option value="full">Full Recap</option>
+                </select>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-title">AI Subtitle Translation</div><div class="toggle-sub">Claude ဖြင့် မြန်မာ ပြောင်းမှု</div></div>
+              <label class="toggle"><input type="checkbox" checked id="togSub"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-title">Copyright Shield</div><div class="toggle-sub">မူပိုင်ခွင့် ကာကွယ်မှု</div></div>
+              <label class="toggle"><input type="checkbox" checked id="togCopy"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-title">Bilingual Subtitles</div><div class="toggle-sub">ဘာသာ နှစ်ခု တွဲ</div></div>
+              <label class="toggle"><input type="checkbox" id="togBi"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+            </div>
+          </div>
+
+          <!-- Pipeline -->
+          <div class="glass" style="padding:18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div style="font-size:13px;font-weight:700;">🔄 Pipeline</div>
+              <span class="ai-badge"><span class="ai-dot"></span>Claude AI</span>
+            </div>
+            <div class="overall-progress">
+              <div class="progress-label">
+                <span class="label-mm">လုပ်ဆောင်နေသည်</span>
+                <span class="progress-pct" id="overallPct">0%</span>
+              </div>
+              <div class="progress-bar-wrap" style="height:4px;">
+                <div class="progress-bar" id="overallBar"></div>
+              </div>
+            </div>
+            <div class="pipeline" id="pipeline">
+              <div class="pipeline-step" id="step-extract">
+                <div class="step-icon">🔊</div>
+                <div class="step-info"><div class="step-name">Audio Extraction</div><div class="step-sub">အသံဖယ်ထုတ်ခြင်း</div><div class="progress-bar-wrap"><div class="progress-bar"></div></div></div>
+                <span class="step-status pending" id="sts-extract">⏳</span>
+              </div>
+              <div class="pipeline-step" id="step-transcribe">
+                <div class="step-icon">📄</div>
+                <div class="step-info"><div class="step-name">Transcription</div><div class="step-sub">စကားအသံ → စာသား</div><div class="progress-bar-wrap"><div class="progress-bar"></div></div></div>
+                <span class="step-status pending" id="sts-transcribe">⏳</span>
+              </div>
+              <div class="pipeline-step" id="step-translate">
+                <div class="step-icon">🌐</div>
+                <div class="step-info"><div class="step-name">Claude Translation</div><div class="step-sub">မြန်မာဘာသာ Real AI</div><div class="progress-bar-wrap"><div class="progress-bar"></div></div></div>
+                <span class="step-status pending" id="sts-translate">⏳</span>
+              </div>
+              <div class="pipeline-step" id="step-sync">
+                <div class="step-icon">⏱️</div>
+                <div class="step-info"><div class="step-name">Subtitle Sync</div><div class="step-sub">စာတန်းချိတ်ဆက်ခြင်း</div><div class="progress-bar-wrap"><div class="progress-bar"></div></div></div>
+                <span class="step-status pending" id="sts-sync">⏳</span>
+              </div>
+              <div class="pipeline-step" id="step-shield">
+                <div class="step-icon">🛡️</div>
+                <div class="step-info"><div class="step-name">Copyright Shield</div><div class="step-sub">မူပိုင်ခွင့် ကာကွယ်မှု</div><div class="progress-bar-wrap"><div class="progress-bar"></div></div></div>
+                <span class="step-status pending" id="sts-shield">⏳</span>
+              </div>
+            </div>
+            <button class="btn-primary" style="width:100%;margin-top:14px;" id="processBtn" onclick="startProcessing()">🚀 Processing စတင်မည်</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: SUBTITLES -->
+    <div class="tab-panel" id="tab-subtitles">
+      <div class="subtitle-editor-grid">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:14px;font-weight:700;">📝 Subtitle Timeline</span>
+              <span class="ai-badge"><span class="ai-dot"></span>Claude Translated</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-icon" onclick="addSubtitle()" title="Add subtitle">+</button>
+              <button class="btn-secondary btn-sm" onclick="translateAllSubs()" id="transAllBtn">🌐 Translate All</button>
+              <button class="btn-secondary btn-sm" onclick="exportSRT()">💾 SRT</button>
+            </div>
+          </div>
+          <!-- Waveform -->
+          <div class="glass-sm" style="padding:10px;margin-bottom:14px;">
+            <div style="font-size:10px;color:var(--muted-fg);margin-bottom:6px;font-family:var(--font-mono);">AUDIO TIMELINE</div>
+            <div class="waveform-vis" id="waveformVis"></div>
+          </div>
+          <div class="sub-list" id="subList"></div>
+        </div>
+        <div>
+          <div class="preview-screen glass">
+            <span style="opacity:.1;font-size:2.5rem;">🎬</span>
+            <div class="preview-subtitle-box">
+              <div class="preview-sub-orig" id="prevOrig">Original here...</div>
+              <div class="preview-subtitle" id="prevMM">မြန်မာ စာတန်း</div>
+            </div>
+          </div>
+          <div class="sub-edit-panel">
+            <h4>✏️ Edit #<span id="editIdx">1</span></h4>
+            <div class="setting-label" style="margin-bottom:5px;">Original</div>
+            <input class="glass-input" id="editOrig" placeholder="Original text..." style="margin-bottom:10px;" oninput="livePreview()">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+              <div class="setting-label">မြန်မာ ဘာသာ</div>
+              <button class="btn-secondary btn-sm" onclick="translateOneSub()" id="oneTransBtn" style="font-size:11px;padding:4px 10px;">🌐 AI ပြန်မည်</button>
+            </div>
+            <textarea class="glass-textarea" id="editMM" placeholder="မြန်မာ စာ ထည့်ပါ..." oninput="livePreview()" style="margin-bottom:10px;"></textarea>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+              <div><div class="setting-label">Start</div><input class="glass-input" id="editStart" placeholder="00:00:00,000" style="font-family:var(--font-mono);font-size:11px;"></div>
+              <div><div class="setting-label">End</div><input class="glass-input" id="editEnd" placeholder="00:00:05,000" style="font-family:var(--font-mono);font-size:11px;"></div>
+            </div>
+            <button class="btn-primary" style="width:100%;font-size:12px;" onclick="saveSub()">💾 Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: RECAP -->
+    <div class="tab-panel" id="tab-recap">
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:15px;font-weight:700;">✂️ AI Myanmar Recap Generator</span>
+            <span class="ai-badge"><span class="ai-dot"></span>Real Claude API</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted-fg);font-family:var(--font-myanmar);margin-bottom:20px;">Content ထည့်ပါ → Claude ဖြင့် မြန်မာ Recap ထုတ်လုပ်မည်</div>
+
+          <!-- Input -->
+          <div style="margin-bottom:14px;">
+            <div class="setting-label" style="margin-bottom:6px;">Input Content (English/Any Language)</div>
+            <textarea class="glass-textarea" id="recapInput" style="min-height:140px;font-size:13px;" placeholder="Paste video transcript, article, or any content here to generate Myanmar recap...&#10;&#10;Example: Today we discuss the latest developments in AI technology..."></textarea>
+          </div>
+
+          <!-- Recap type -->
+          <div class="recap-options" id="recapOptions">
+            <div class="recap-opt selected" onclick="selRecapType(this,'reel')"><div class="opt-icon">⚡</div><div class="opt-name">Reel 60s</div><div class="opt-sub">ဆိုရှယ်မီဒီယာ</div></div>
+            <div class="recap-opt" onclick="selRecapType(this,'short')"><div class="opt-icon">📱</div><div class="opt-name">Short 5-min</div><div class="opt-sub">အနှစ်ချုပ်</div></div>
+            <div class="recap-opt" onclick="selRecapType(this,'full')"><div class="opt-icon">🎬</div><div class="opt-name">Full Recap</div><div class="opt-sub">ပြည့်စုံ</div></div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn-primary" id="recapBtn" onclick="generateRecap()">✨ Recap ထုတ်မည်</button>
+            <button class="btn-secondary" onclick="copyRecap()">📋 ကူးယူ</button>
+            <button class="btn-secondary" onclick="clearRecap()">🗑 ရှင်းမည်</button>
+          </div>
+
+          <!-- Output -->
+          <div class="recap-output" id="recapOutput">
+            <div style="color:var(--muted-fg);font-family:var(--font-myanmar);text-align:center;padding:20px;font-size:13px;">
+              Content ထည့်ပြီး Recap ထုတ်ပါ
+            </div>
+          </div>
+          <div class="token-info" id="tokenInfo" style="display:none;">
+            <span class="token-chip" id="tokInput">Input: —</span>
+            <span class="token-chip" id="tokOutput">Output: —</span>
+            <span class="token-chip" id="tokModel">Model: —</span>
+          </div>
+        </div>
+
+        <!-- Voice selector (side) -->
+        <div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">🎙️ Voice Select</div>
+          <div id="voiceGrid" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: EXPORT -->
+    <div class="tab-panel" id="tab-export">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📤 Export</div>
+          <div style="font-size:12px;color:var(--muted-fg);font-family:var(--font-myanmar);margin-bottom:18px;">ဖိုင်ထုတ်ယူမည်</div>
+          <div class="export-grid">
+            <div class="export-card" onclick="exportFile('srt')"><span class="export-icon">📄</span><div class="export-name">SRT Subtitle</div><div class="export-sub">Myanmar Unicode</div><div class="export-size">SRT · UTF-8</div></div>
+            <div class="export-card" onclick="exportFile('txt')"><span class="export-icon">📝</span><div class="export-name">Transcript</div><div class="export-sub">မြန်မာ + Original</div><div class="export-size">TXT · Unicode</div></div>
+            <div class="export-card" onclick="exportFile('recap')"><span class="export-icon">✂️</span><div class="export-name">Recap Text</div><div class="export-sub">AI ထုတ်လုပ်ထားသည်</div><div class="export-size">TXT · Myanmar</div></div>
+            <div class="export-card" onclick="exportFile('json')"><span class="export-icon">📊</span><div class="export-name">JSON Data</div><div class="export-sub">Subtitle + Meta</div><div class="export-size">JSON · UTF-8</div></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">🛡️ Copyright Shield</div>
+          <div style="font-size:12px;color:var(--muted-fg);font-family:var(--font-myanmar);margin-bottom:18px;">မူပိုင်ခွင့် ကာကွယ်မှု စစ်ဆေးချက်</div>
+          <div class="copyright-check"><div style="font-size:18px;width:32px;text-align:center;">🎵</div><div class="check-info"><div class="check-name">Audio Fingerprint Strip</div><div class="check-desc">Content ID အသံ ဖျောက်ဖျက်ခြင်း</div></div><span class="status-badge status-safe">✓ SAFE</span></div>
+          <div class="copyright-check"><div style="font-size:18px;width:32px;text-align:center;">🔊</div><div class="check-info"><div class="check-name">Pitch Shift ±2%</div><div class="check-desc">အသံအမြင့် ပြောင်းလဲခြင်း</div></div><span class="status-badge status-safe">✓ APPLIED</span></div>
+          <div class="copyright-check"><div style="font-size:18px;width:32px;text-align:center;">⚡</div><div class="check-info"><div class="check-name">Speed Variation ±1%</div><div class="check-desc">အမြန်နှုန်း ချိန်ညှိခြင်း</div></div><span class="status-badge status-safe">✓ APPLIED</span></div>
+          <div class="copyright-check"><div style="font-size:18px;width:32px;text-align:center;">📋</div><div class="check-info"><div class="check-name">Metadata Wipe</div><div class="check-desc">ဖိုင် Metadata ဖျောက်ဖျက်ခြင်း</div></div><span class="status-badge status-safe">✓ CLEANED</span></div>
+          <div class="copyright-check"><div style="font-size:18px;width:32px;text-align:center;">🎨</div><div class="check-info"><div class="check-name">Color Grade Micro-shift</div><div class="check-desc">ဗီဒီယိုအရောင် ပြောင်းလဲခြင်း</div></div><span class="status-badge status-warn">⚠ OPTIONAL</span></div>
+
+          <div class="glass-sm" style="padding:14px;margin-top:14px;border-color:rgba(0,210,148,0.3);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span>✅</span>
+              <div><div style="font-size:12px;font-weight:700;color:var(--accent-jade);">Copyright Score: 98/100</div><div style="font-size:10px;color:var(--muted-fg);font-family:var(--font-myanmar)">ဖြန့်ဝေရန် လုံခြုံပါသည်</div></div>
+            </div>
+            <div class="progress-bar-wrap" style="height:5px;"><div class="progress-bar" style="width:98%;background:linear-gradient(90deg,var(--accent-jade),var(--accent-sapphire));"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── QUICK TRANSLATE ─── -->
+<section class="section" id="translate-section">
+  <div class="container">
+    <div class="fade-in">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+        <div class="section-title">🌐 Quick Translate</div>
+        <span class="ai-badge"><span class="ai-dot"></span>Real Claude API</span>
+      </div>
+      <div class="section-sub-mm">မည်သည့်ဘာသာမဆို → မြန်မာ Native ဘာသာ Real AI ဖြင့် ပြောင်းမည်</div>
+    </div>
+
+    <div class="glass fade-in" style="padding:24px;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+        <select class="glass-select" id="qtSrcLang" style="width:auto;">
+          <option value="English">🇬🇧 English</option>
+          <option value="Chinese">🇨🇳 Chinese</option>
+          <option value="Thai">🇹🇭 Thai</option>
+          <option value="Japanese">🇯🇵 Japanese</option>
+          <option value="Korean">🇰🇷 Korean</option>
+        </select>
+        <span style="color:var(--muted-fg);font-size:18px;">→</span>
+        <span style="font-size:13px;font-weight:700;font-family:var(--font-myanmar);">မြန်မာ</span>
+
+        <select class="glass-select" id="qtStyle" style="width:auto;">
+          <option value="natural">Natural / Casual</option>
+          <option value="formal">Formal / News</option>
+          <option value="subtitle">Subtitle Style</option>
+          <option value="story">Story / Narrative</option>
+        </select>
+      </div>
+
+      <div class="translate-grid">
+        <div class="lang-box">
+          <div class="lang-header">
+            <div class="lang-label">SOURCE TEXT</div>
+            <button class="btn-icon" style="font-size:11px;" onclick="clearTranslate()">✕</button>
+          </div>
+          <textarea class="translate-area" id="qtInput" placeholder="Type or paste text to translate...&#10;&#10;Example: Today we discuss the latest developments in AI technology that are revolutionizing how we work."></textarea>
+        </div>
+        <div class="lang-box">
+          <div class="lang-header">
+            <div class="lang-label" style="color:var(--accent-violet);">မြန်မာ OUTPUT</div>
+            <div style="display:flex;gap:4px;">
+              <button class="btn-icon" style="font-size:11px;" onclick="copyTranslation()">📋</button>
+            </div>
+          </div>
+          <textarea class="translate-area myanmar-out" id="qtOutput" placeholder="မြန်မာ ဘာသာပြန်ချက် ဤနေရာတွင် ပေါ်မည်..." readonly></textarea>
+        </div>
+      </div>
+
+      <div class="translate-actions" style="margin-top:14px;">
+        <button class="btn-primary" id="qtBtn" onclick="quickTranslate()">🌐 Translate မည်</button>
+        <button class="btn-secondary" onclick="swapAndTranslate()">🔄 Swap</button>
+        <div id="qtStatus" style="font-size:12px;color:var(--muted-fg);"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── VOICES ─── -->
+<section class="section" id="voices-section">
+  <div class="container">
+    <div class="fade-in">
+      <div class="section-title">🎙️ AI Voice Library</div>
+      <div class="section-sub-mm">မြန်မာ AI အသံများ (Web Speech API)</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="fade-in">
+      <div class="glass" style="padding:22px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;"><span style="font-size:22px;">👨</span><div><div style="font-size:14px;font-weight:700;">Male Voices</div><div style="font-size:11px;color:var(--muted-fg);font-family:var(--font-myanmar);">ကျား AI အသံများ</div></div></div>
+        <div id="maleVoiceList"></div>
+      </div>
+      <div class="glass" style="padding:22px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;"><span style="font-size:22px;">👩</span><div><div style="font-size:14px;font-weight:700;">Female Voices</div><div style="font-size:11px;color:var(--muted-fg);font-family:var(--font-myanmar);">မ AI အသံများ</div></div></div>
+        <div id="femaleVoiceList"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-logo">🎬 Myanmar Recap Studio</div>
+    <div class="footer-mm">Claude AI ဖြင့် ဗီဒီယို မြန်မာဘာသာ ပြောင်းလဲမှု</div>
+    <div style="font-size:11px;color:var(--muted-fg);">© 2025 Myanmar Recap Studio · Powered by Anthropic Claude API</div>
+  </div>
+</footer>
+
+<!-- ─── JAVASCRIPT ─── -->
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let apiKey = '';
+let selectedVoice = 'ma-hnin';
+let selectedRecapType = 'reel';
+let processingDone = false;
+let activeSubIdx = 0;
+let isPlaying = false;
+let lastRecapText = '';
+let lastTranslation = '';
+
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const API_URL = 'https://api.anthropic.com/v1/messages';
+
+// ═══════════════════════════════════════════
+// VOICE DATA
+// ═══════════════════════════════════════════
+const voices = [
+  { id:'ko-min',   name:'Ko Min',    nameMM:'ကိုမင်း',   gender:'male',   style:'Formal',     accent:'Yangon',    icon:'👨‍💼', bg:'rgba(48,128,255,0.15)',  ac:'rgba(48,128,255,0.4)' },
+  { id:'u-kyaw',   name:'U Kyaw',    nameMM:'ဦးကျော်',   gender:'male',   style:'Deep',       accent:'Mandalay',  icon:'👴',  bg:'rgba(232,50,90,0.15)',   ac:'rgba(232,50,90,0.4)' },
+  { id:'aung',     name:'Aung',      nameMM:'အောင်',     gender:'male',   style:'Casual',     accent:'Yangon',    icon:'😎',  bg:'rgba(0,210,148,0.15)',   ac:'rgba(0,210,148,0.4)' },
+  { id:'naing',    name:'Naing',     nameMM:'နိုင်',     gender:'male',   style:'News',       accent:'Naypyidaw', icon:'📺',  bg:'rgba(245,200,66,0.15)',  ac:'rgba(245,200,66,0.4)' },
+  { id:'ma-hnin',  name:'Ma Hnin',   nameMM:'မနှင်း',   gender:'female', style:'Warm',       accent:'Yangon',    icon:'👩‍🎤', bg:'rgba(246,51,154,0.15)', ac:'rgba(246,51,154,0.4)' },
+  { id:'daw-khin', name:'Daw Khin',  nameMM:'ဒေါ်ခင်',  gender:'female', style:'Formal',     accent:'Mandalay',  icon:'👩‍⚕️', bg:'rgba(172,75,255,0.15)', ac:'rgba(172,75,255,0.4)' },
+  { id:'su',       name:'Su',        nameMM:'ဆု',        gender:'female', style:'Casual',     accent:'Yangon',    icon:'🌸',  bg:'rgba(0,186,167,0.15)',   ac:'rgba(0,186,167,0.4)' },
+  { id:'nan',      name:'Nan',       nameMM:'နန်း',      gender:'female', style:'Storyteller',accent:'Shan',      icon:'📖',  bg:'rgba(0,210,148,0.15)',   ac:'rgba(0,210,148,0.4)' },
+];
+
+// ═══════════════════════════════════════════
+// SUBTITLE DATA
+// ═══════════════════════════════════════════
+let subtitles = [
+  { idx:1, start:'00:00:00,000', end:'00:00:03,500', original:'Welcome to our channel.', mm:'ကျွန်တော်တို့ channel မှ ကြိုဆိုပါသည်။' },
+  { idx:2, start:'00:00:03,600', end:'00:00:08,200', original:"Today we're talking about AI technology.", mm:'ယနေ့ AI နည်းပညာ အကြောင်း ဆွေးနွေးမည်။' },
+  { idx:3, start:'00:00:08,300', end:'00:00:13,000', original:'Machine learning is changing everything.', mm:'Machine Learning သည် အရာအားလုံးကို ပြောင်းလဲနေသည်။' },
+];
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Load saved API key
+  const saved = localStorage.getItem('mms_api_key');
+  if (saved) { apiKey = saved; setApiConnected(true); }
+  else { document.getElementById('apiModal').classList.remove('hidden'); }
+
+  buildVoiceGrid();
+  buildVoiceList();
+  buildSubList();
+  buildWaveform();
+  initScrollAnim();
+  setupDragDrop();
+});
+
+// ═══════════════════════════════════════════
+// API KEY MODAL
+// ═══════════════════════════════════════════
+function openApiModal() { document.getElementById('apiModal').classList.remove('hidden'); }
+function clearApiError() { document.getElementById('apiError').style.display='none'; }
+function toggleApiKeyVis() {
+  const inp = document.getElementById('apiKeyInput');
+  inp.type = inp.type==='password' ? 'text' : 'password';
+}
+async function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-ant-') && !key.startsWith('sk-')) {
+    document.getElementById('apiError').style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('apiSaveBtn');
+  btn.innerHTML = '<span class="spinner"></span> Testing...'; btn.disabled = true;
+
+  // Test the key with a simple call
+  const ok = await testApiKey(key);
+  if (ok) {
+    apiKey = key;
+    localStorage.setItem('mms_api_key', key);
+    document.getElementById('apiModal').classList.add('hidden');
+    setApiConnected(true);
+    showToast('✅ Claude API ချိတ်ဆက်ပြီး!', 'success');
+  } else {
+    document.getElementById('apiError').textContent = 'API Key မှားနေသည် သို့မဟုတ် ကွန်ရက် error ဖြစ်နေသည်';
+    document.getElementById('apiError').style.display = 'block';
+  }
+  btn.innerHTML = '✨ ချိတ်ဆက်မည်'; btn.disabled = false;
+}
+function skipApiKey() {
+  document.getElementById('apiModal').classList.add('hidden');
+  showToast('⚠ Demo Mode — AI features မအလုပ်လုပ်ပါ', 'warn');
+}
+async function testApiKey(key) {
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL, max_tokens: 10,
+        messages: [{ role:'user', content:'hi' }]
+      })
+    });
+    return res.status === 200;
+  } catch { return false; }
+}
+function setApiConnected(yes) {
+  const chip = document.getElementById('apiChip');
+  const label = document.getElementById('apiChipLabel');
+  if (yes) {
+    chip.className = 'api-status-chip connected';
+    label.textContent = 'Claude API ✓';
+  } else {
+    chip.className = 'api-status-chip disconnected';
+    label.textContent = 'API မချိတ်ရသေး';
+  }
+}
+
+// ═══════════════════════════════════════════
+// CLAUDE API CALL — STREAMING
+// ═══════════════════════════════════════════
+async function claudeStream(prompt, onChunk, onDone, systemPrompt='') {
+  if (!apiKey) { showToast('⚠ API Key မထည့်ရသေး — Navbar ကနေ ချိတ်ဆက်ပါ', 'warn'); return; }
+
+  const body = {
+    model: CLAUDE_MODEL,
+    max_tokens: 2048,
+    stream: true,
+    messages: [{ role:'user', content: prompt }]
+  };
+  if (systemPrompt) body.system = systemPrompt;
+
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let inputTokens = 0, outputTokens = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const json = JSON.parse(data);
+          if (json.type === 'content_block_delta' && json.delta?.text) {
+            fullText += json.delta.text;
+            onChunk(json.delta.text, fullText);
+          }
+          if (json.type === 'message_start') {
+            inputTokens = json.message?.usage?.input_tokens || 0;
+          }
+          if (json.type === 'message_delta') {
+            outputTokens = json.usage?.output_tokens || 0;
+          }
+        } catch {}
+      }
+    }
+    onDone(fullText, { inputTokens, outputTokens });
+  } catch(e) {
+    showToast('❌ API Error: ' + e.message, 'error');
+    onDone('', {});
+  }
+}
+
+// Non-streaming for subtitle translate (faster for single line)
+async function claudeCall(prompt, systemPrompt='') {
+  if (!apiKey) { showToast('⚠ API Key မထည့်ရသေး', 'warn'); return null; }
+  try {
+    const body = {
+      model: CLAUDE_MODEL, max_tokens: 500,
+      messages: [{ role:'user', content: prompt }]
+    };
+    if (systemPrompt) body.system = systemPrompt;
+
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data.content?.[0]?.text?.trim() || null;
+  } catch(e) {
+    showToast('❌ ' + e.message, 'error');
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════
+// QUICK TRANSLATE (with streaming)
+// ═══════════════════════════════════════════
+async function quickTranslate() {
+  const input = document.getElementById('qtInput').value.trim();
+  if (!input) { showToast('⚠ Text ထည့်ပါ', 'warn'); return; }
+  if (!apiKey) { openApiModal(); return; }
+
+  const srcLang = document.getElementById('qtSrcLang').value;
+  const style   = document.getElementById('qtStyle').value;
+
+  const styleDesc = {
+    natural: 'natural, casual, conversational Myanmar',
+    formal: 'formal, professional, news-broadcast style Myanmar',
+    subtitle: 'concise subtitle style Myanmar, short sentences',
+    story: 'engaging storytelling narrative Myanmar style'
+  }[style];
+
+  const btn = document.getElementById('qtBtn');
+  const status = document.getElementById('qtStatus');
+  btn.innerHTML = '<span class="spinner"></span> Translating...'; btn.disabled=true;
+  document.getElementById('qtOutput').value = '';
+  status.textContent = 'Claude ဖြင့် ပြန်ဆိုနေသည်...';
+
+  const systemPrompt = `You are an expert Myanmar (Burmese) translator. Translate the given ${srcLang} text into ${styleDesc}. 
+Rules:
+- Use proper Myanmar Unicode (Zawgyi-free, Unicode standard)
+- Sound native, not robotic or literal
+- Preserve tone: if source is funny, keep it funny; if formal, stay formal
+- Output ONLY the Myanmar translation, nothing else`;
+
+  const prompt = `Translate this to Myanmar:\n\n${input}`;
+
+  await claudeStream(
+    prompt,
+    (chunk, full) => { document.getElementById('qtOutput').value = full; },
+    (full) => {
+      lastTranslation = full;
+      btn.innerHTML='🌐 Translate မည်'; btn.disabled=false;
+      status.textContent = '✓ ပြီးပါပြီ';
+      setTimeout(()=>status.textContent='',2000);
+    },
+    systemPrompt
+  );
+}
+
+function clearTranslate() {
+  document.getElementById('qtInput').value='';
+  document.getElementById('qtOutput').value='';
+  document.getElementById('qtStatus').textContent='';
+}
+function copyTranslation() {
+  const text = document.getElementById('qtOutput').value;
+  if (!text) { showToast('⚠ ပြန်ဆိုချက် မရှိသေး', 'warn'); return; }
+  navigator.clipboard?.writeText(text).then(()=>showToast('📋 ကူးယူပြီး!','success')).catch(()=>showToast('⚠ ကူးမရ','warn'));
+}
+function swapAndTranslate() {
+  const mm = document.getElementById('qtOutput').value;
+  if(mm) { document.getElementById('qtInput').value=mm; document.getElementById('qtOutput').value=''; }
+}
+
+// ═══════════════════════════════════════════
+// RECAP GENERATION (with streaming)
+// ═══════════════════════════════════════════
+function selRecapType(el, type) {
+  selectedRecapType = type;
+  document.querySelectorAll('.recap-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function generateRecap() {
+  const input = document.getElementById('recapInput').value.trim();
+  if (!input) { showToast('⚠ Content ထည့်ပါ', 'warn'); return; }
+  if (!apiKey) { openApiModal(); return; }
+
+  const typeDesc = {
+    reel:  'a 60-second engaging social media reel recap — very punchy, hook-heavy, emoji-friendly, designed for TikTok/Reels/Shorts',
+    short: 'a 5-minute comprehensive summary recap — organized with key points, good flow, informative',
+    full:  'a full detailed recap — thorough analysis, context, backstory, complete narration of all key events'
+  }[selectedRecapType];
+
+  const btn = document.getElementById('recapBtn');
+  btn.innerHTML='<span class="spinner"></span> Generating...'; btn.disabled=true;
+
+  const out = document.getElementById('recapOutput');
+  out.innerHTML = `<div style="color:var(--muted-fg);font-family:var(--font-myanmar);font-size:13px;display:flex;align-items:center;gap:8px;">
+    <span class="spinner" style="color:var(--accent-violet);"></span> Claude ဖြင့် Myanmar Recap ထုတ်နေသည်...
+  </div>`;
+
+  document.getElementById('tokenInfo').style.display='none';
+
+  const systemPrompt = `You are an expert Myanmar (Burmese) content creator who writes ${typeDesc}. 
+Rules:
+- Write ENTIRELY in Myanmar (Burmese) language with proper Unicode
+- Be engaging, native-sounding, not a literal translation
+- Use natural Myanmar sentence structures and idioms  
+- For reel style: use short punchy sentences, add drama and hooks
+- For short/full: use clear paragraphs, add context a Myanmar audience would appreciate
+- Output only the Myanmar recap text, no English explanations`;
+
+  const prompt = `Create ${typeDesc} in Myanmar language for this content:\n\n${input}`;
+
+  let fullText = '';
+  let firstChunk = true;
+
+  await claudeStream(
+    prompt,
+    (chunk, full) => {
+      if (firstChunk) {
+        out.innerHTML = '<div class="recap-text myanmar" id="recapStream"></div>';
+        firstChunk = false;
+      }
+      fullText = full;
+      const el = document.getElementById('recapStream');
+      if (el) {
+        el.innerHTML = formatRecapText(full) + '<span class="typing-cursor"></span>';
+      }
+    },
+    (full, usage) => {
+      lastRecapText = full;
+      const el = document.getElementById('recapStream');
+      if (el) el.innerHTML = formatRecapText(full);
+
+      // Token info
+      if (usage.inputTokens || usage.outputTokens) {
+        document.getElementById('tokenInfo').style.display='flex';
+        document.getElementById('tokInput').textContent = `Input: ${usage.inputTokens} tokens`;
+        document.getElementById('tokOutput').textContent = `Output: ${usage.outputTokens} tokens`;
+        document.getElementById('tokModel').textContent = `Model: ${CLAUDE_MODEL}`;
+      }
+      btn.innerHTML='✨ Recap ထုတ်မည်'; btn.disabled=false;
+      showToast('✅ Myanmar Recap ထုတ်ပြီး!','success');
+    },
+    systemPrompt
+  );
+}
+
+function formatRecapText(text) {
+  return text
+    .split('\n')
+    .filter(l=>l.trim())
+    .map(l => `<p>${l}</p>`)
+    .join('');
+}
+function copyRecap() {
+  if (!lastRecapText) { showToast('⚠ Recap မရှိသေး','warn'); return; }
+  navigator.clipboard?.writeText(lastRecapText).then(()=>showToast('📋 ကူးယူပြီး!','success')).catch(()=>showToast('⚠ ကူးမရ','warn'));
+}
+function clearRecap() {
+  document.getElementById('recapInput').value='';
+  document.getElementById('recapOutput').innerHTML='<div style="color:var(--muted-fg);font-family:var(--font-myanmar);text-align:center;padding:20px;font-size:13px;">Content ထည့်ပြီး Recap ထုတ်ပါ</div>';
+  document.getElementById('tokenInfo').style.display='none';
+  lastRecapText='';
+}
+
+// ═══════════════════════════════════════════
+// SUBTITLE TRANSLATION (Claude API)
+// ═══════════════════════════════════════════
+async function translateOneSub() {
+  const orig = document.getElementById('editOrig').value.trim();
+  if (!orig) { showToast('⚠ Original text မရှိသေး','warn'); return; }
+  if (!apiKey) { openApiModal(); return; }
+
+  const btn = document.getElementById('oneTransBtn');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+
+  const result = await claudeCall(
+    `Translate this to native Myanmar subtitle text (short, natural, proper Unicode):\n"${orig}"\n\nOutput ONLY the Myanmar translation, nothing else.`
+  );
+  if (result) {
+    document.getElementById('editMM').value = result;
+    livePreview();
+    showToast('✅ AI ဖြင့် ပြောင်းပြီး!','success');
+  }
+  btn.innerHTML='🌐 AI ပြန်မည်'; btn.disabled=false;
+}
+
+async function translateAllSubs() {
+  if (!apiKey) { openApiModal(); return; }
+  if (!subtitles.length) { showToast('⚠ Subtitle မရှိသေး','warn'); return; }
+
+  const btn = document.getElementById('transAllBtn');
+  btn.innerHTML='<span class="spinner"></span> Translating...'; btn.disabled=true;
+  showToast('🌐 Subtitle အားလုံး Claude ဖြင့် ပြောင်းနေသည်...','info');
+
+  for (let i=0; i<subtitles.length; i++) {
+    const result = await claudeCall(
+      `Translate to native Myanmar subtitle (concise, natural Unicode):\n"${subtitles[i].original}"\nOutput ONLY Myanmar translation.`
+    );
+    if (result) subtitles[i].mm = result;
+    await sleep(200); // Rate limit buffer
+  }
+
+  buildSubList();
+  selectSub(activeSubIdx);
+  btn.innerHTML='🌐 Translate All'; btn.disabled=false;
+  showToast('✅ Subtitle အားလုံး ပြောင်းပြီး!','success');
+}
+
+// ═══════════════════════════════════════════
+// PROCESSING PIPELINE (simulation + real translate)
+// ═══════════════════════════════════════════
+async function startProcessing() {
+  const btn = document.getElementById('processBtn');
+  btn.innerHTML='<span class="spinner"></span> Processing...'; btn.disabled=true;
+
+  const steps = [
+    { id:'extract',    label:'🔊 Audio Extraction', pct:20 },
+    { id:'transcribe', label:'📄 Transcription',    pct:45 },
+    { id:'translate',  label:'🌐 AI Translation',   pct:70, real:true },
+    { id:'sync',       label:'⏱ Subtitle Sync',     pct:90 },
+    { id:'shield',     label:'🛡 Copyright Shield',  pct:100 },
+  ];
+
+  for (const s of steps) {
+    await runStep(s.id, s.pct, s.real);
+    await sleep(s.real ? 2000 : 900);
+  }
+
+  processingDone = true;
+  btn.innerHTML='✅ Processing ပြီးပါပြီ!';
+  btn.style.background='linear-gradient(135deg,var(--accent-jade),var(--accent-sapphire))';
+
+  if (apiKey) await translateAllSubs();
+  showToast('🎉 Processing ပြီး! Subtitle & Recap tabs ကြည့်ပါ','success');
+}
+
+function runStep(id, pct, isReal=false) {
+  return new Promise(resolve => {
+    const step = document.getElementById('step-'+id);
+    const sts  = document.getElementById('sts-'+id);
+    step.className='pipeline-step active';
+    sts.className='step-status running'; sts.textContent='⚡';
+    setOverall(pct-18);
+    setTimeout(()=>{
+      step.className='pipeline-step done';
+      sts.className='step-status done'; sts.textContent='✓';
+      setOverall(pct);
+      resolve();
+    }, isReal ? 1800 : 800);
+  });
+}
+function setOverall(pct) {
+  document.getElementById('overallPct').textContent=pct+'%';
+  document.getElementById('overallBar').style.width=pct+'%';
+}
+
+// ═══════════════════════════════════════════
+// VOICE GRID & LIST
+// ═══════════════════════════════════════════
+function buildVoiceGrid() {
+  const grid = document.getElementById('voiceGrid');
+  grid.innerHTML = voices.map(v=>`
+    <div class="glass-sm" style="padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;border-radius:12px;"
+         id="vg-${v.id}" onclick="selectVoice('${v.id}')">
+      <div style="width:36px;height:36px;border-radius:10px;background:${v.bg};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${v.icon}</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;">${v.name} <span style="font-family:var(--font-myanmar);font-weight:400;color:var(--muted-fg);">${v.nameMM}</span></div>
+        <div style="font-size:10px;color:var(--muted-fg);">${v.style} · ${v.accent}</div>
+      </div>
+      <div id="vg-check-${v.id}" style="display:none;color:var(--accent-violet);">✓</div>
+    </div>
+  `).join('');
+  selectVoice('ma-hnin');
+}
+function selectVoice(id) {
+  selectedVoice = id;
+  voices.forEach(v=>{
+    const el = document.getElementById('vg-'+v.id);
+    const ck = document.getElementById('vg-check-'+v.id);
+    if(el) el.style.borderColor = v.id===id ? 'rgba(172,75,255,0.5)' : '';
+    if(ck) ck.style.display = v.id===id ? 'block' : 'none';
+  });
+}
+
+function buildVoiceList() {
+  const male   = voices.filter(v=>v.gender==='male');
+  const female = voices.filter(v=>v.gender==='female');
+  const mkItem = v=>`
+    <div class="glass-sm" style="padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;margin-bottom:8px;"
+         onmouseenter="this.style.borderColor='${v.ac}'" onmouseleave="this.style.borderColor=''"
+         onclick="selectVoice('${v.id}');showToast('${v.icon} ${v.name} (${v.nameMM}) selected!','info')">
+      <div style="width:38px;height:38px;border-radius:10px;background:${v.bg};display:flex;align-items:center;justify-content:center;font-size:20px;">${v.icon}</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;">${v.name} <span style="font-family:var(--font-myanmar);font-weight:400;color:var(--muted-fg);">${v.nameMM}</span></div>
+        <div style="font-size:10px;color:var(--muted-fg);">${v.style} · ${v.accent} · ${v.age||''}</div>
+      </div>
+      <span class="tag" style="color:${v.ac};border-color:${v.ac}20;background:${v.bg};">${v.style}</span>
+    </div>
+  `;
+  document.getElementById('maleVoiceList').innerHTML   = male.map(mkItem).join('');
+  document.getElementById('femaleVoiceList').innerHTML = female.map(mkItem).join('');
+}
+
+// ═══════════════════════════════════════════
+// SUBTITLE EDITOR
+// ═══════════════════════════════════════════
+function buildSubList() {
+  document.getElementById('subList').innerHTML = subtitles.map((s,i)=>`
+    <div class="sub-item ${i===activeSubIdx?'active':''}" id="sub-${i}" onclick="selectSub(${i})">
+      <div class="sub-idx">${String(s.idx).padStart(2,'0')}</div>
+      <div class="sub-content">
+        <div class="sub-timing">${s.start} → ${s.end}</div>
+        <div class="sub-original">${s.original}</div>
+        <div class="sub-mm">${s.mm}</div>
+      </div>
+      <div class="sub-actions">
+        <button class="sub-edit-btn" onclick="editSub(event,${i})">✏️</button>
+        <button class="sub-edit-btn" onclick="delSub(event,${i})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+function selectSub(i) {
+  activeSubIdx=i;
+  document.querySelectorAll('.sub-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('sub-'+i)?.classList.add('active');
+  const s=subtitles[i]; if(!s) return;
+  document.getElementById('editIdx').textContent=s.idx;
+  document.getElementById('editOrig').value=s.original;
+  document.getElementById('editMM').value=s.mm;
+  document.getElementById('editStart').value=s.start;
+  document.getElementById('editEnd').value=s.end;
+  livePreview();
+}
+function livePreview() {
+  document.getElementById('prevOrig').textContent=document.getElementById('editOrig').value;
+  document.getElementById('prevMM').textContent=document.getElementById('editMM').value;
+}
+function saveSub() {
+  const i=activeSubIdx; const s=subtitles[i]; if(!s) return;
+  s.original=document.getElementById('editOrig').value;
+  s.mm=document.getElementById('editMM').value;
+  s.start=document.getElementById('editStart').value;
+  s.end=document.getElementById('editEnd').value;
+  buildSubList(); selectSub(i);
+  showToast('💾 Subtitle သိမ်းပြီး!','success');
+}
+function editSub(e,i){e.stopPropagation();selectSub(i);}
+function delSub(e,i){
+  e.stopPropagation();
+  if(subtitles.length<=1){showToast('⚠ Subtitle တစ်ခုသာ ကျန်ရှိသည်!','warn');return;}
+  subtitles.splice(i,1); subtitles.forEach((s,idx)=>s.idx=idx+1);
+  activeSubIdx=Math.min(activeSubIdx,subtitles.length-1);
+  buildSubList(); selectSub(activeSubIdx);
+  showToast('🗑 ဖျက်ပြီး!','warn');
+}
+function addSubtitle() {
+  subtitles.push({idx:subtitles.length+1,start:'00:00:30,000',end:'00:00:34,000',original:'New subtitle line.',mm:'စာတန်း အသစ်'});
+  buildSubList(); selectSub(subtitles.length-1);
+  showToast('➕ ထည့်ပြီး!','success');
+}
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function exportFile(type) {
+  let content='', filename='', mime='text/plain;charset=utf-8';
+  if(type==='srt') {
+    content=subtitles.map(s=>`${s.idx}\n${s.start.replace(',','.')} --> ${s.end.replace(',','.')}\n${s.original}\n${s.mm}\n`).join('\n');
+    filename='myanmar_subtitles.srt';
+  } else if(type==='txt') {
+    content=subtitles.map(s=>`[${s.start}]\n${s.original}\n${s.mm}`).join('\n\n');
+    filename='transcript_myanmar.txt';
+  } else if(type==='recap') {
+    if(!lastRecapText){showToast('⚠ Recap မရှိသေး — ဦးစွာ Recap ထုတ်ပါ','warn');return;}
+    content=lastRecapText; filename='myanmar_recap.txt';
+  } else if(type==='json') {
+    content=JSON.stringify({subtitles,generated:new Date().toISOString()},null,2);
+    filename='subtitle_data.json'; mime='application/json';
+  }
+  const blob=new Blob([content],{type:mime});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=filename; a.click();
+  showToast(`💾 ${filename} download ပြီး!`,'success');
+}
+function exportSRT() { exportFile('srt'); }
+
+// ═══════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════
+function setupDragDrop() {
+  const zone=document.getElementById('uploadZone');
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
+  zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+  zone.addEventListener('drop',e=>{
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0]; if(file) processFile(file);
+  });
+}
+function triggerFileInput(){document.getElementById('fileInput').click();}
+function handleFileSelect(e){const f=e.target.files[0];if(f)processFile(f);}
+function processFile(file) {
+  const ext=file.name.split('.').pop().toUpperCase();
+  const size=(file.size/1024/1024).toFixed(1);
+  const card=document.getElementById('videoPreview'); card.classList.add('visible');
+  document.getElementById('videoFilename').textContent=file.name;
+  document.getElementById('videoInfo').textContent=`${size} MB · ${ext}`;
+  document.getElementById('videoTags').innerHTML=`
+    <span class="tag tag-blue">${ext}</span><span class="tag tag-green">${size} MB</span>
+    <span class="tag tag-gold">Ready</span><span class="tag tag-violet">AI Ready</span>`;
+  if(file.type.startsWith('video/')) {
+    const v=document.getElementById('previewVideo'); v.src=URL.createObjectURL(file);
+    v.onloadedmetadata=()=>{v.classList.add('loaded'); document.getElementById('videoInfo').textContent+=` · ${formatTime(v.duration)}`;};
+  }
+  if(ext==='SRT') parseSRT(file);
+  showToast('✅ ဖိုင် တင်ပြီး! Processing ပြုလုပ်ရန် အဆင်သင့်','success');
+}
+function parseSRT(file) {
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    const blocks=text.split(/\n\n+/).filter(b=>b.trim());
+    const parsed=[];
+    blocks.forEach((b,i)=>{
+      const lines=b.trim().split('\n');
+      if(lines.length>=3) {
+        const timeLine=lines[1]; const [start,end]=timeLine.split(' --> ').map(t=>t.trim().replace('.',','));
+        const orig=lines.slice(2).join(' ');
+        parsed.push({idx:i+1,start,end,original:orig,mm:'...'});
+      }
+    });
+    if(parsed.length){subtitles=parsed;buildSubList();selectSub(0);showToast(`📄 SRT ဖိုင် ${parsed.length} ကြောင်း ရပြီ!`,'success');}
+  };
+  reader.readAsText(file,'UTF-8');
+}
+function togglePlay(){
+  const v=document.getElementById('previewVideo');
+  if(!v.src) return;
+  if(isPlaying){v.pause();isPlaying=false;}else{v.play();isPlaying=true;}
+}
+function formatTime(s){const m=Math.floor(s/60),sec=Math.floor(s%60);return`${m}:${sec.toString().padStart(2,'0')}`;}
+
+// ═══════════════════════════════════════════
+// WAVEFORM
+// ═══════════════════════════════════════════
+function buildWaveform() {
+  const vis=document.getElementById('waveformVis');
+  vis.innerHTML=Array.from({length:60},(_,i)=>`<div class="wv-bar" style="height:${6+Math.random()*28}px;--d:${(.5+Math.random()*.6).toFixed(2)}s;animation-delay:${(i*.025).toFixed(2)}s;"></div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function switchTab(id,btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+function scrollToSection(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth'});}
+function initScrollAnim(){
+  const obs=new IntersectionObserver(e=>e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('visible');}),{threshold:.1});
+  document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
+}
+function showToast(msg,type='info'){
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div');
+  t.className=`toast toast-${type}`; t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.animation='toastOut .3s ease forwards';setTimeout(()=>t.remove(),300);},3500);
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// Init subtitle list on load
+buildSubList(); selectSub(0);
+</script>
+</body>
+</html>
