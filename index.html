@@ -1043,28 +1043,17 @@ function toggleApiKeyVis() {
   const inp = document.getElementById('apiKeyInput');
   inp.type = inp.type==='password' ? 'text' : 'password';
 }
-async function saveApiKey() {
+function saveApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
   if (!key.startsWith('sk-ant-') && !key.startsWith('sk-')) {
     document.getElementById('apiError').style.display = 'block';
     return;
   }
-  const btn = document.getElementById('apiSaveBtn');
-  btn.innerHTML = '<span class="spinner"></span> Testing...'; btn.disabled = true;
-
-  // Test the key with a simple call
-  const ok = await testApiKey(key);
-  if (ok) {
-    apiKey = key;
-    localStorage.setItem('mms_api_key', key);
-    document.getElementById('apiModal').classList.add('hidden');
-    setApiConnected(true);
-    showToast('✅ Claude API ချိတ်ဆက်ပြီး!', 'success');
-  } else {
-    document.getElementById('apiError').textContent = 'API Key မှားနေသည် သို့မဟုတ် ကွန်ရက် error ဖြစ်နေသည်';
-    document.getElementById('apiError').style.display = 'block';
-  }
-  btn.innerHTML = '✨ ချိတ်ဆက်မည်'; btn.disabled = false;
+  apiKey = key;
+  localStorage.setItem('mms_api_key', key);
+  document.getElementById('apiModal').classList.add('hidden');
+  setApiConnected(true);
+  showToast('✅ Claude API Key သိမ်းပြီး! Features သုံးနိုင်ပြီ', 'success');
 }
 function skipApiKey() {
   document.getElementById('apiModal').classList.add('hidden');
